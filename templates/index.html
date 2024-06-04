@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Stream</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+
+        img {
+            display: block;
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            max-width: 100%; /* Ensure image doesn't exceed container width */
+        }
+    </style>
+</head>
+<body>
+    <img id="screen" src="{{ url_for('video_feed') }}">
+    <script>
+        const imgElement = document.getElementById('screen');
+        let frameTimes = [];
+        const targetFPS = 120;
+        const frameInterval = 1000 / targetFPS;
+        const buffer = [];
+
+        // Function to handle frame display and buffering
+        function handleFrame() {
+            if (buffer.length > 0) {
+                const frame = buffer.shift();
+                imgElement.src = frame.url;
+                frameTimes.push(performance.now());
+
+                if (frameTimes.length > targetFPS) {
+                    frameTimes.shift();
+                }
+            }
+            setTimeout(handleFrame, frameInterval);
+        }
+
+        // Start handling frames
+        handleFrame();
+
+        // Function to receive frames from server
+        function receiveFrame(frameData) {
+            buffer.push({
+                url: URL.createObjectURL(new Blob([frameData], { type: 'image/jpeg' }))
+            });
+        }
+
+        // Event listener to handle receiving frames
+        const eventSource = new EventSource('/video_feed');
+        eventSource.onmessage = function (event) {
+            receiveFrame(event.data);
+        };
+    </script>
+</body>
+</html>
