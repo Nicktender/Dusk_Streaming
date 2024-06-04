@@ -23,6 +23,33 @@
 <body>
     <img id="screen" src="{{ url_for('video_feed') }}">
     <script>
+        // Function to handle key press event
+        function handleKeyPress(event) {
+            if (event.ctrlKey && event.key === '\\') { // Check for Ctrl + \
+                // Send a POST request to the server to toggle the cursor
+                fetch('/toggle_cursor', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        key: event.key
+                    })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            console.error('Error toggling cursor:', response.statusText);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error toggling cursor:', error);
+                    });
+            }
+        }
+
+        // Event listener for key press
+        document.addEventListener('keydown', handleKeyPress);
+
         const imgElement = document.getElementById('screen');
         let frameTimes = [];
         const targetFPS = 120;
@@ -55,9 +82,4 @@
 
         // Event listener to handle receiving frames
         const eventSource = new EventSource('/video_feed');
-        eventSource.onmessage = function (event) {
-            receiveFrame(event.data);
-        };
-    </script>
-</body>
-</html>
+        eventSource.onmessage
