@@ -6,7 +6,7 @@ import pyautogui
 from flask import Flask, Response, render_template, request
 
 app = Flask(__name__)
-
+active = True
 # Original screen resolution
 original_width, original_height = pyautogui.size()
 
@@ -18,8 +18,9 @@ max_chunks = 10
 
 # Function to capture screen and record video in chunks
 def capture_screen():
+    global active
     frame_duration = 1.0 / 120  # Duration for each frame to maintain 30 FPS
-    chunk_duration = 60  # Duration of each video chunk (in seconds)
+    chunk_duration = 30  # Duration of each video chunk (in seconds)
     
     # Define the codec
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can change the codec as per your preference
@@ -53,7 +54,7 @@ def capture_screen():
             
             # Blend current frame with previous frame
             if prev_frame is not None:
-                alpha = 0.2
+                alpha = 0.1
                 current_frame = cv2.addWeighted(prev_frame, alpha, current_frame, 1 - alpha, 0)
             
             # Get the current mouse cursor position
@@ -64,7 +65,8 @@ def capture_screen():
             scaled_mouse_y = int(mouse_y * target_height / original_height)
             
             # Draw a small red circle to represent the mouse cursor
-            cv2.circle(current_frame, (scaled_mouse_x, scaled_mouse_y), 5, (0, 0, 255), -1)
+            if active:
+                cv2.circle(current_frame, (scaled_mouse_x, scaled_mouse_y), 5, (0, 0, 255), -1)
             
             # Write the frame to the video file
             out.write(current_frame)
@@ -101,9 +103,11 @@ def capture_screen():
 # Route to toggle cursor
 @app.route('/toggle_cursor', methods=['POST'])
 def toggle_cursor():
-    pyautogui.FAILSAFE = not pyautogui.FAILSAFE  # Toggle the PyAutoGUI fail-safe feature
-    return 'Cursor toggled successfully'
-
+    global active
+    if active:
+        active = False
+    else:
+        active = True
 # Route for the main page
 @app.route('/')
 def index():
